@@ -1,0 +1,81 @@
+name: Alerting.Functions.Management
+
+pool: 
+  vmImage: ubuntu-latest
+
+variables:
+  - group: Alerting.Functions.Management
+  - name: AppName
+    value: Alerting.Functions
+  - name: ProjectPath
+    value: src/Alerting.Functions.Management/Alerting.Functions.Management.csproj
+  - name: BuildArguments
+    value: ''
+  - name: Environment
+    value: Test
+  - name: AzureAppName
+    value:  fa-opsgenie-test-uks-01
+  - name: ServiceConnectionName
+    value: AzureSponsorship
+  
+stages:
+  - stage: Build
+    jobs:
+    - job: Dotnet_Build
+      steps:
+        - task: DotNetCoreCLI@2
+          displayName: Dotnet Build
+          inputs:
+            command: build
+            projects: $(ProjectPath)
+            arguments: $(BuildArguments)
+        
+  - stage: Publish
+    dependsOn:
+      - Build
+    jobs:
+    - job: Dotnet_Publish
+      steps:
+        - task: DotNetCoreCLI@2
+          displayName: Dotnet Publish
+          inputs:
+            command: publish
+            publishWebProjects: false
+            projects: $(ProjectPath)
+            arguments: --configuration $(BuildConfiguration) --output $(build.artifactstagingdirectory)/$(AppName)
+            zipAfterPublish: true
+            modifyOutputPath: false
+
+        - task: PublishPipelineArtifact@1
+          displayName: Publish artifact version $(Version)
+          inputs:
+            targetPath: $(build.artifactstagingdirectory)/$(AppName)
+            artifactName: drop
+    
+  - stage: Deploy
+    dependsOn:
+      - Publish
+    jobs:
+    - deployment: deploy
+      environment: $(Environment)
+      displayName: Deploy to $(Environment)
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - task: DownloadPipelineArtifact@2
+              inputs:
+                artifact: drop
+                path: $(Agent.BuildDirectory)
+
+            - task: FileTransform@1
+              inputs:
+                folderPath: '$(Agent.BuildDirectory)/drop/Alerting.Functions.zip'
+                fileType: 'json'
+                targetFiles: '**/appsettings.json'
+
+            - task: AzureFunctionApp@1
+              inputs:
+                azureSubscription: $(ServiceConnectionName)
+                appname: $(AzureAppName)
+                package: $(Agent.BuildDirectory)/drop/$(AppName).zip
