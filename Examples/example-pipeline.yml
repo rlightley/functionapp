@@ -1,30 +1,27 @@
 pool: 
-  name: exgprduk-buildagent-pool
+  vmImage: ubuntu-latest
 
 resources:
   repositories:
   - repository: Shared
     type: git
-    name: Exg-InternalTools/Exg.DevOps.Shared
+    name: Demo.shared.Pipelines
 
 variables:
   AppName: Playground.WebApi.Api
-  ProjectPath: src/Playground.WebApi.Api/Playground.WebApi.Api.csproj
+  ProjectPath: src/FunctionApp1/FunctionApp1.csproj
+  TestProjectPath: test/TestProject1/TestProject1.csproj
   BuildArguments: ''
-  IsWebApp: true
-  IsFunctionApp: false
 
 extends:
-  template: pipelines/web.yml@Shared
+  template: Pipelines/function-app-pipeline.yml@Shared
   parameters:
     Environments:
       - Name: Dev
         ServiceConnectionName: playground
-        AzureAppName: as-playground-api-uks
-        DependsOn: 
-          - Publish
+        AzureAppName: fa-demo-dev-uks
       - Name: Production
         ServiceConnectionName: playground
-        AzureAppName: as-playground-api-uks
+        AzureAppName: fa-demo-prod-uks
         DependsOn: 
           - DeployDev
