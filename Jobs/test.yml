@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=./test.yml
+
+jobs:
+  - job: Dotnet_Test
+    displayName: Run unit tests    
+    steps:
+      - task: DotNetCoreCLI@2
+        displayName: Dotnet Test
+        inputs:
+          command: test
+          projects: $(TestProjectPath)

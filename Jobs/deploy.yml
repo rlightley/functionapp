@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=./deploy.yml
+parameters:
+  env: ''
+  serviceConnectionName: ''
+  azureAppName: ''
+  
+jobs:
+- deployment: deploy
+  environment: ${{ parameters.env }}
+  variables:
+    Version: $[ stageDependencies.Version.Version_App.outputs['SetVersion.Version'] ]    
+  displayName: Deploy to ${{ parameters.env }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - task: AzureFunctionApp@1
+          inputs:
+            azureSubscription: ${{ parameters.serviceConnectionName }}
+            appname: ${{ parameters.azureAppName }}
+            package: $(Agent.BuildDirectory)/drop/$(AppName)-$(Version).zip

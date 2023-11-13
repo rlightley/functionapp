@@ -1,0 +1,30 @@
+pool: 
+  name: exgprduk-buildagent-pool
+
+resources:
+  repositories:
+  - repository: Shared
+    type: git
+    name: Exg-InternalTools/Exg.DevOps.Shared
+
+variables:
+  AppName: Playground.WebApi.Api
+  ProjectPath: src/Playground.WebApi.Api/Playground.WebApi.Api.csproj
+  BuildArguments: ''
+  IsWebApp: true
+  IsFunctionApp: false
+
+extends:
+  template: pipelines/web.yml@Shared
+  parameters:
+    Environments:
+      - Name: Dev
+        ServiceConnectionName: playground
+        AzureAppName: as-playground-api-uks
+        DependsOn: 
+          - Publish
+      - Name: Production
+        ServiceConnectionName: playground
+        AzureAppName: as-playground-api-uks
+        DependsOn: 
+          - DeployDev

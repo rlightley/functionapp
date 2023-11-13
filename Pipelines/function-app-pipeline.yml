@@ -1,0 +1,56 @@
+parameters:
+  - name: Environments
+    type: object
+    default: []
+    
+stages:
+  - stage: Version
+    displayName: Determine version
+    jobs:
+      - template: ../Jobs/version.yml
+
+  - stage: Build
+    displayName: Dotnet build
+    dependsOn: Version
+    jobs:
+      - template: ../Jobs/build.yml
+
+  - stage: Test
+    displayName: Dotnet publish
+    dependsOn:
+      - Build
+      - Version
+    jobs:
+      - template: ../Jobs/test.yml
+
+  # - stage: Transform
+  #   displayName: File transform
+  #   dependsOn:
+  #     - Build
+  #     - Version
+  #   jobs:
+  #     - template: ../Jobs/transform.yml
+
+  - stage: Publish
+    displayName: Dotnet publish
+    dependsOn:
+      - Test
+      - Version
+    jobs:
+      - template: ../Jobs/publish.yml
+
+  - ${{ each env in parameters.Environments }}:
+    - stage: Deploy${{ env.Name }}
+      displayName: Deploy to ${{ env.Name }}
+      dependsOn: 
+        - Version
+        - Publish
+        - ${{ if ne(env.DependsOn, '') }}:
+          - ${{ each dep in env.DependsOn }}:
+            - ${{ dep }}
+      jobs:
+        - template: ../Jobs/deploy.yml
+          parameters:
+            serviceConnectionName: ${{ env.ServiceConnectionName }}
+            env: ${{ env.Name }}
+            azureAppName: ${{ env.AzureAppName }}

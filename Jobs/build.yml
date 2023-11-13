@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=./build.yml
+
+jobs:
+  - job: Dotnet_Build
+    steps:
+      - task: NuGetAuthenticate@0
+        displayName: Nuget Authenticate
+
+      - task: DotNetCoreCLI@2
+        displayName: Dotnet Build
+        inputs:
+          command: build
+          projects: $(ProjectPath)
+          arguments: $(BuildArguments)

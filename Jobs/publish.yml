@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=./publish.yml
+
+jobs:
+  - job: Dotnet_Publish
+    displayName: Publish Dotnet App    
+    variables:
+      Version: $[ stageDependencies.Version.Version_App.outputs['SetVersion.Version'] ]    
+    steps:
+      - task: DotNetCoreCLI@2
+        displayName: Build app version $(Version)
+        inputs:
+          command: publish
+          publishWebProjects: false
+          projects: $(ProjectPath)
+          arguments: --configuration $(BuildConfiguration) --output $(build.artifactstagingdirectory)/$(AppName)-$(Version)
+          zipAfterPublish: true
+          modifyOutputPath: false
+
+      - task: PublishPipelineArtifact@1
+        displayName: Publish artifact version $(Version)
+        inputs:
+          targetPath: $(build.artifactstagingdirectory)/$(AppName)-$(Version)
+          artifactName: drop
